@@ -4,6 +4,7 @@ import { Calculator, Printer, Plus, Users, FileText, Ruler, Cog, Layers, Package
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { DashboardLayout } from '@/components/dashboard-layout'
+import { getAuthHeaders } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 
@@ -220,7 +221,7 @@ function HitungCetakanPage() {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch('/api/customers')
+      const response = await fetch('/api/customers', { headers: getAuthHeaders() })
       const data = await response.json()
       if (Array.isArray(data)) setCustomers(data)
     } catch (error) {
@@ -230,7 +231,7 @@ function HitungCetakanPage() {
 
   const fetchPapers = async () => {
     try {
-      const response = await fetch('/api/papers')
+      const response = await fetch('/api/papers', { headers: getAuthHeaders() })
       const data = await response.json()
       if (Array.isArray(data)) setPapers(data)
     } catch (error) {
@@ -240,7 +241,7 @@ function HitungCetakanPage() {
 
   const fetchPrintingCosts = async () => {
     try {
-      const response = await fetch('/api/printing-costs')
+      const response = await fetch('/api/printing-costs', { headers: getAuthHeaders() })
       const data = await response.json()
       if (Array.isArray(data)) setPrintingCosts(data)
     } catch (error) {
@@ -250,7 +251,7 @@ function HitungCetakanPage() {
 
   const fetchFinishings = async () => {
     try {
-      const response = await fetch('/api/finishings')
+      const response = await fetch('/api/finishings', { headers: getAuthHeaders() })
       const data = await response.json()
       if (Array.isArray(data)) setFinishings(data)
     } catch (error) {
@@ -264,7 +265,7 @@ function HitungCetakanPage() {
     fetchPrintingCosts()
     fetchFinishings()
     // Fetch profit setting
-    fetch('/api/settings?key=profit')
+    fetch('/api/settings?key=profit', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(data => {
         if (data.value) setProfitPercent(parseFloat(data.value) || 0)
@@ -1040,7 +1041,7 @@ function HitungCetakanPage() {
                 try {
                   const res = await fetch('/api/riwayat-cetakan', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                     body: JSON.stringify(payload)
                   })
                   if (res.ok) {

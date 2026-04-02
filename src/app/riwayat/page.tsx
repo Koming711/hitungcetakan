@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Scissors, Calculator, Search, Printer, Trash2, Eye, Pencil, X } from 'lucide-react'
 import { DashboardLayout } from '@/components/dashboard-layout'
+import { getAuthHeaders } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 
@@ -78,21 +79,21 @@ export default function RiwayatPage() {
   const [detailItem, setDetailItem] = useState<PotongKertas | HitungCetakan | null>(null)
 
   const fetchPotong = useCallback(async () => {
-    try { const r = await fetch('/api/riwayat-potong'); const d = await r.json(); if (Array.isArray(d)) setDataPotong(d) } catch {}
+    try { const r = await fetch('/api/riwayat-potong', { headers: getAuthHeaders() }); const d = await r.json(); if (Array.isArray(d)) setDataPotong(d) } catch {}
   }, [])
   const fetchCetakan = useCallback(async () => {
-    try { const r = await fetch('/api/riwayat-cetakan'); const d = await r.json(); if (Array.isArray(d)) setDataCetakan(d) } catch {}
+    try { const r = await fetch('/api/riwayat-cetakan', { headers: getAuthHeaders() }); const d = await r.json(); if (Array.isArray(d)) setDataCetakan(d) } catch {}
   }, [])
   useEffect(() => { fetchPotong(); fetchCetakan() }, [fetchPotong, fetchCetakan])
 
   // ============ DELETE ============
   const handleDeletePotong = async (id: string) => {
     if (!confirm('Hapus riwayat potong kertas ini?')) return
-    try { await fetch(`/api/riwayat-potong?id=${id}`, { method: 'DELETE' }); setDataPotong(p => p.filter(d => d.id !== id)); toast.success('Dihapus') } catch { toast.error('Gagal') }
+    try { await fetch(`/api/riwayat-potong?id=${id}`, { method: 'DELETE', headers: getAuthHeaders() }); setDataPotong(p => p.filter(d => d.id !== id)); toast.success('Dihapus') } catch { toast.error('Gagal') }
   }
   const handleDeleteCetakan = async (id: string) => {
     if (!confirm('Hapus riwayat hitung cetakan ini?')) return
-    try { await fetch(`/api/riwayat-cetakan?id=${id}`, { method: 'DELETE' }); setDataCetakan(p => p.filter(d => d.id !== id)); toast.success('Dihapus') } catch { toast.error('Gagal') }
+    try { await fetch(`/api/riwayat-cetakan?id=${id}`, { method: 'DELETE', headers: getAuthHeaders() }); setDataCetakan(p => p.filter(d => d.id !== id)); toast.success('Dihapus') } catch { toast.error('Gagal') }
   }
 
   // ============ EDIT → Navigate to form pages ============

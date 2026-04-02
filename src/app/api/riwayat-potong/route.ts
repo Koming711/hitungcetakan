@@ -2,12 +2,18 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { toSnakeCase, toCamelCase } from '@/lib/case-converter'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { data, error } = await supabase
+    const userId = request.headers.get('x-user-id')
+    const userRole = request.headers.get('x-user-role')
+    let query = supabase
       .from('RiwayatPotongKertas')
       .select('*')
       .order('created_at', { ascending: false })
+    if (userId && userRole !== 'admin') {
+      query = query.eq('user_id', userId)
+    }
+    const { data, error } = await query
 
     if (error) {
       console.error('Error fetching riwayat potong:', error)
@@ -25,9 +31,11 @@ export async function POST(request: Request) {
   try {
     const data = await request.json()
 
+    const userId = request.headers.get('x-user-id') || ''
     const { error } = await supabase
       .from('RiwayatPotongKertas')
       .insert([toSnakeCase({
+        userId,
         customerName: data.customerName || '',
         paperName: data.paperName || '',
         grammage: data.grammage || 0,

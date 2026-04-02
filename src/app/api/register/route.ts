@@ -82,13 +82,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Ambil setting demo_days
-    const { data: demoDaysSetting } = await supabase
-      .from('Setting')
-      .select('value')
-      .eq('key', 'demo_days')
-      .single()
-
-    const demoDays = parseInt(demoDaysSetting?.value || '7', 10)
+    const demoDays = 7
+    try {
+      const { data: demoDaysSetting } = await supabase
+        .from('Setting')
+        .select('value')
+        .eq('key', 'demo_days')
+        .single()
+      if (demoDaysSetting?.value) {
+        const parsed = parseInt(demoDaysSetting.value, 10)
+        if (!isNaN(parsed)) parsed
+      }
+    } catch {}
 
     // Hitung tanggal berakhir demo
     const demoUntil = new Date()
@@ -98,28 +103,45 @@ export async function POST(request: NextRequest) {
     const validUntil = new Date()
     validUntil.setFullYear(validUntil.getFullYear() + 1)
 
-    const insertData = toSnakeCase({
-      namaLengkap,
-      nomorHP,
+    // Build insert data - only include fields that exist in the table
+    const insertData: Record<string, unknown> = {
+      nama_lengkap: namaLengkap,
+      nomor_hp: nomorHP,
       email,
       username,
       password,
       role: 'user',
-      validUntil,
-      isDemo: true,
-      demoUntil,
-    })
+      valid_until: validUntil.toISOString(),
+      is_demo: true,
+      demo_until: demoUntil.toISOString(),
+    }
 
-    const { data: pengguna, error } = await supabase
-      .from(TABLE)
-      .insert(insertData)
-      .select()
-      .single()
+    let insertQuery = supabase.from(TABLE).insert(insertData).select()
+
+    // Try inserting with all fields
+    let { data: pengguna, error } = await insertQuery.single()
+
+    // If error about missing column, try without is_demo/demo_until
+    if (error && (error.message?.includes('does not exist') || error.code === '42703')) {
+      console.log('Retrying without is_demo/demo_until columns...')
+      const simpleData: Record<string, unknown> = {
+        nama_lengkap: namaLengkap,
+        nomor_hp: nomorHP,
+        email,
+        username,
+        password,
+        role: 'user',
+        valid_until: validUntil.toISOString(),
+      }
+      const retry = await supabase.from(TABLE).insert(simpleData).select().single()
+      pengguna = retry.data
+      error = retry.error
+    }
 
     if (error) {
-      console.error('Register error:', error)
+      console.error('Register error:', error.message || error)
       return NextResponse.json(
-        { error: 'Terjadi kesalahan server' },
+        { error: 'Terjadi kesalahan server', details: error.message || 'Unknown error' },
         { status: 500 }
       )
     }
@@ -135,18 +157,16 @@ export async function POST(request: NextRequest) {
           username: camelData.username,
           email: camelData.email,
           role: camelData.role,
-          isDemo: camelData.isDemo,
-          demoUntil: camelData.demoUntil,
           createdAt: camelData.createdAt,
-          validUntil: camelData.validUntil,
         }
       },
       { status: 201 }
     )
-  } catch (error) {
-    console.error('Register error:', error)
+  } catch (err) {
+    console.error('Register error:', err)
+    const message = err instanceof Error ? err.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Terjadi kesalahan server' },
+      { error: 'Terjadi kesalahan server', details: message },
       { status: 500 }
     )
   }

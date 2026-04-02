@@ -3,6 +3,7 @@
 import { FileText, Plus, Search, Loader2, Printer, Download } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { DashboardLayout } from '@/components/dashboard-layout'
+import { getAuthHeaders } from '@/lib/auth'
 import { MobileTable } from '@/components/mobile-table'
 import { Button } from '@/components/ui/button'
 import { DialogForm } from '@/components/dialog-form'
@@ -33,7 +34,7 @@ export default function MasterHargaKertasPage() {
 
   const fetchPapers = async () => {
     try {
-      const response = await fetch('/api/papers')
+      const response = await fetch('/api/papers', { headers: getAuthHeaders() })
       const data = await response.json()
       setPapers(data)
     } catch (error) {
@@ -66,7 +67,8 @@ export default function MasterHargaKertasPage() {
     if (confirm(`Apakah Anda yakin ingin menghapus ${paper.name}?`)) {
       try {
         const response = await fetch(`/api/papers/${paper.id}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: getAuthHeaders()
         })
         if (response.ok) {
           setPapers(papers.filter(p => p.id !== paper.id))
@@ -151,7 +153,7 @@ export default function MasterHargaKertasPage() {
         // Update existing paper
         const response = await fetch(`/api/papers/${editingPaper.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify(data)
         })
         if (response.ok) {
@@ -165,7 +167,7 @@ export default function MasterHargaKertasPage() {
         // Add new paper
         const response = await fetch('/api/papers', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify(data)
         })
         if (response.ok) {

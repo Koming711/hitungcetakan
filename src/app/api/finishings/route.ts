@@ -3,12 +3,18 @@ import { supabase } from '@/lib/supabase'
 import { toSnakeCase, toCamelCase } from '@/lib/case-converter'
 
 // GET all finishings
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const { data, error } = await supabase
+    const userId = request.headers.get('x-user-id')
+    const userRole = request.headers.get('x-user-role')
+    let query = supabase
       .from('Finishing')
       .select('*')
       .order('created_at', { ascending: false })
+    if (userId && userRole !== 'admin') {
+      query = query.eq('user_id', userId)
+    }
+    const { data, error } = await query
 
     if (error) {
       console.error('Error fetching finishings:', error)
@@ -38,6 +44,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    const userId = request.headers.get('x-user-id') || ''
     const { data, error } = await supabase
       .from('Finishing')
       .insert([toSnakeCase({
@@ -45,7 +52,8 @@ export async function POST(request: NextRequest) {
         minimumSheets: parseInt(minimumSheets) || 0,
         minimumPrice: parseFloat(minimumPrice) || 0,
         additionalPrice: parseFloat(additionalPrice) || 0,
-        pricePerCm: parseFloat(pricePerCm) || 0
+        pricePerCm: parseFloat(pricePerCm) || 0,
+        userId,
       })])
       .select()
 

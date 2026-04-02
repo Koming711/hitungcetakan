@@ -6,7 +6,7 @@ import { DashboardLayout } from '@/components/dashboard-layout'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
-import { getAuthUser } from '@/lib/auth'
+import { getAuthUser, getAuthHeaders } from '@/lib/auth'
 
 export default function PengaturanPage() {
   const [activeTab, setActiveTab] = useState('umum')
@@ -42,12 +42,17 @@ export default function PengaturanPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
+        // Fetch admin-only global settings (no user context needed)
         const res = await fetch('/api/settings')
         const data = await res.json()
-        if (data.profit) setProfitPercent(data.profit)
         if (data.demo_days) setDemoDays(data.demo_days)
         if (data.popup_message) setPopupMessage(data.popup_message)
         if (data.auto_logout_minutes) setAutoLogoutMinutes(data.auto_logout_minutes)
+
+        // Fetch user-specific profit setting (with user context)
+        const profitRes = await fetch('/api/settings?key=profit', { headers: getAuthHeaders() })
+        const profitData = await profitRes.json()
+        if (profitData.value) setProfitPercent(profitData.value)
       } catch {}
     }
     fetchSettings()
@@ -56,25 +61,30 @@ export default function PengaturanPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
+      // Save user-specific profit setting (with user context)
+      const profitHeaders = { ...getAuthHeaders(), 'Content-Type': 'application/json' }
+      // Save admin-only global settings (no user context)
+      const globalHeaders = { 'Content-Type': 'application/json' }
+
       await Promise.all([
         fetch('/api/settings', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: profitHeaders,
           body: JSON.stringify({ key: 'profit', value: profitPercent })
         }),
         fetch('/api/settings', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: globalHeaders,
           body: JSON.stringify({ key: 'demo_days', value: demoDays })
         }),
         fetch('/api/settings', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: globalHeaders,
           body: JSON.stringify({ key: 'popup_message', value: popupMessage })
         }),
         fetch('/api/settings', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: globalHeaders,
           body: JSON.stringify({ key: 'auto_logout_minutes', value: autoLogoutMinutes })
         }),
       ])

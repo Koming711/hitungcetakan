@@ -2,12 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { toSnakeCase, toCamelCase } from '@/lib/case-converter'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const { data, error } = await supabase
+    const userId = request.headers.get('x-user-id')
+    const userRole = request.headers.get('x-user-role')
+
+    let query = supabase
       .from('Customer')
       .select('*')
       .order('created_at', { ascending: false })
+
+    // Non-admin users only see their own data
+    if (userId && userRole !== 'admin') {
+      query = query.eq('user_id', userId)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       console.error('Error fetching customers:', error)
@@ -32,6 +42,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { name, address, phone, email } = body
+    const userId = request.headers.get('x-user-id') || ''
 
     if (!name || !address || !phone || !email) {
       return NextResponse.json(
@@ -42,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase
       .from('Customer')
-      .insert([toSnakeCase({ name, address, phone, email })])
+      .insert([toSnakeCase({ name, address, phone, email, userId })])
       .select()
 
     if (error) {

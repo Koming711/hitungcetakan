@@ -3,6 +3,7 @@
 import { Users, Plus, Search, Mail, Phone, MapPin, Loader2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/dashboard-layout'
+import { getAuthHeaders } from '@/lib/auth'
 import { MobileTable } from '@/components/mobile-table'
 import { Button } from '@/components/ui/button'
 import { DialogForm } from '@/components/dialog-form'
@@ -31,7 +32,7 @@ export default function MasterCustomerPage() {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch('/api/customers')
+      const response = await fetch('/api/customers', { headers: getAuthHeaders() })
       const data = await response.json()
       setCustomers(data)
     } catch (error) {
@@ -63,7 +64,8 @@ export default function MasterCustomerPage() {
     if (confirm(`Apakah Anda yakin ingin menghapus customer ${customer.name}?`)) {
       try {
         const response = await fetch(`/api/customers/${customer.id}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: getAuthHeaders()
         })
         if (response.ok) {
           setCustomers(customers.filter(c => c.id !== customer.id))
@@ -84,7 +86,7 @@ export default function MasterCustomerPage() {
         // Update existing customer
         const response = await fetch(`/api/customers/${editingCustomer.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify(data)
         })
         if (response.ok) {
@@ -98,7 +100,7 @@ export default function MasterCustomerPage() {
         // Add new customer
         const response = await fetch('/api/customers', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify(data)
         })
         if (response.ok) {

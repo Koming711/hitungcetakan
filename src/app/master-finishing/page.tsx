@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Layers, Plus, Search, Printer, Trash2, Edit2 } from 'lucide-react'
 import { DashboardLayout } from '@/components/dashboard-layout'
+import { getAuthHeaders } from '@/lib/auth'
 import { MobileTable } from '@/components/mobile-table'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -46,7 +47,7 @@ export default function MasterFinishingPage() {
   const fetchFinishings = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/finishings')
+      const response = await fetch('/api/finishings', { headers: getAuthHeaders() })
       const data = await response.json()
       
       console.log('API Response:', data)
@@ -156,7 +157,8 @@ export default function MasterFinishingPage() {
     if (confirm(`Apakah Anda yakin ingin menghapus ${finishing.name}?`)) {
       try {
         await fetch(`/api/finishings/${finishing.id}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: getAuthHeaders()
         })
         fetchFinishings()
       } catch (error) {
@@ -187,7 +189,7 @@ export default function MasterFinishingPage() {
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify(payload)
       })
 

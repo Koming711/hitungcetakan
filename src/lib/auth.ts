@@ -133,3 +133,18 @@ export function register(username: string, password: string, name?: string): boo
   localStorage.setItem('users', JSON.stringify(users))
   return true
 }
+
+export function getAuthHeaders(): Record<string, string> {
+  if (typeof window === 'undefined') return {}
+  const authData = localStorage.getItem('auth')
+  if (!authData) return {}
+  try {
+    const user = JSON.parse(authData)
+    return {
+      'x-user-id': user.id || '',
+      'x-user-role': user.role || 'user',
+    }
+  } catch {
+    return {}
+  }
+}

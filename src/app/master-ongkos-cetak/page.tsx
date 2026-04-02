@@ -3,6 +3,7 @@
 import { Printer, Plus, Search, Loader2, DollarSign } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { DashboardLayout } from '@/components/dashboard-layout'
+import { getAuthHeaders } from '@/lib/auth'
 import { MobileTable } from '@/components/mobile-table'
 import { Button } from '@/components/ui/button'
 import { DialogForm } from '@/components/dialog-form'
@@ -37,7 +38,7 @@ export default function MasterOngkosCetakPage() {
 
   const fetchPrintingCosts = async () => {
     try {
-      const response = await fetch('/api/printing-costs')
+      const response = await fetch('/api/printing-costs', { headers: getAuthHeaders() })
       const data = await response.json()
       setPrintingCosts(data)
     } catch (error) {
@@ -66,7 +67,8 @@ export default function MasterOngkosCetakPage() {
     if (confirm(`Apakah Anda yakin ingin menghapus ${cost.machineName}?`)) {
       try {
         const response = await fetch(`/api/printing-costs/${cost.id}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: getAuthHeaders()
         })
         if (response.ok) {
           setPrintingCosts(printingCosts.filter(c => c.id !== cost.id))
@@ -166,7 +168,7 @@ export default function MasterOngkosCetakPage() {
         // Update existing printing cost
         const response = await fetch(`/api/printing-costs/${editingCost.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify(data)
         })
         if (response.ok) {
@@ -180,7 +182,7 @@ export default function MasterOngkosCetakPage() {
         // Add new printing cost
         const response = await fetch('/api/printing-costs', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify(data)
         })
         if (response.ok) {

@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { toSnakeCase, toCamelCase } from '@/lib/case-converter'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const { data, error } = await supabase
+    const userId = request.headers.get('x-user-id')
+    const userRole = request.headers.get('x-user-role')
+    let query = supabase
       .from('PrintingCost')
       .select('*')
       .order('created_at', { ascending: false })
+    if (userId && userRole !== 'admin') {
+      query = query.eq('user_id', userId)
+    }
+    const { data, error } = await query
 
     if (error) {
       console.error('Error fetching printing costs:', error)
@@ -51,6 +57,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const userId = request.headers.get('x-user-id') || ''
     const { data, error } = await supabase
       .from('PrintingCost')
       .insert([toSnakeCase({
@@ -62,7 +69,8 @@ export async function POST(request: NextRequest) {
         specialColorPrice: parseFloat(specialColorPrice),
         minimumPrintQuantity: parseInt(minimumPrintQuantity),
         priceAboveMinimumPerSheet: parseFloat(priceAboveMinimumPerSheet),
-        platePricePerSheet: parseFloat(platePricePerSheet)
+        platePricePerSheet: parseFloat(platePricePerSheet),
+        userId,
       })])
       .select()
 
